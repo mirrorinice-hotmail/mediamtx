@@ -45,24 +45,24 @@ func newOptionalPathValues() interface{} {
 
 // OptionalPath is a Path whose values can all be optional.
 type OptionalPath struct {
-	Values interface{}
+	ValuesOp interface{}
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (p *OptionalPath) UnmarshalJSON(b []byte) error {
-	p.Values = newOptionalPathValues()
-	return jsonwrapper.Unmarshal(b, p.Values)
+	p.ValuesOp = newOptionalPathValues()
+	return jsonwrapper.Unmarshal(b, p.ValuesOp)
 }
 
 // UnmarshalEnv implements env.Unmarshaler.
 func (p *OptionalPath) UnmarshalEnv(prefix string, _ string) error {
-	if p.Values == nil {
-		p.Values = newOptionalPathValues()
+	if p.ValuesOp == nil {
+		p.ValuesOp = newOptionalPathValues()
 	}
-	return env.Load(prefix, p.Values)
+	return env.Load(prefix, p.ValuesOp)
 }
 
 // MarshalJSON implements json.Marshaler.
 func (p *OptionalPath) MarshalJSON() ([]byte, error) {
-	return json.Marshal(p.Values)
+	return json.Marshal(p.ValuesOp)
 }

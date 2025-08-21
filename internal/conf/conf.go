@@ -106,7 +106,7 @@ func anyPathHasDeprecatedCredentials(pathDefaults Path, paths map[string]*Option
 
 	for _, pa := range paths {
 		if pa != nil {
-			rva := reflect.ValueOf(pa.Values).Elem()
+			rva := reflect.ValueOf(pa.ValuesOp).Elem()
 			if rva.FieldByName("PublishUser").Interface().(*Credential) != nil ||
 				rva.FieldByName("PublishPass").Interface().(*Credential) != nil ||
 				rva.FieldByName("PublishIPs").Interface().(*IPNetworks) != nil ||
@@ -770,7 +770,7 @@ func (conf *Conf) Validate(l logger.Writer) error {
 		optional := conf.OptionalPaths[name]
 		if optional == nil {
 			optional = &OptionalPath{
-				Values: newOptionalPathValues(),
+				ValuesOp: newOptionalPathValues(),
 			}
 			conf.OptionalPaths[name] = optional
 		}
@@ -812,7 +812,7 @@ func (conf *Conf) PatchGlobal(optional *OptionalGlobal) {
 
 // PatchPathDefaults patches path default settings.
 func (conf *Conf) PatchPathDefaults(optional *OptionalPath) {
-	copyStructFields(&conf.PathDefaults, optional.Values)
+	copyStructFields(&conf.PathDefaults, optional.ValuesOp)
 }
 
 // AddPath adds a path.
@@ -836,7 +836,7 @@ func (conf *Conf) PatchPath(name string, optional2 *OptionalPath) error {
 		return ErrPathNotFound
 	}
 
-	copyStructFields(optional.Values, optional2.Values)
+	copyStructFields(optional.ValuesOp, optional2.ValuesOp)
 	return nil
 }
 

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "cctv5_001",
+    "path": {
+      "source": "rtsp://10.10.0.31:1935/rinowebrtc/cctv5.stream"
+    }
+  },
+  {
+    "name": "cctv5_002",
+    "path": {
+      "source": "rtsp://10.10.0.31:1935/rinowebrtc/cctv5.stream"
+    }
+  }
+]

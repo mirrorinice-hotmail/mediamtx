@@ -1,4 +1,4 @@
-// Package api contains the API server.
+﻿// Package api contains the API server.
 package api
 
 import (
@@ -9,6 +9,7 @@ import (
 	"os"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -172,9 +173,11 @@ func (a *API) Initialize() error {
 	group.GET("/config/paths/list", a.onConfigPathsList)
 	group.GET("/config/paths/get/*name", a.onConfigPathsGet)
 	group.POST("/config/paths/add/*name", a.onConfigPathsAdd)
+	group.POST("/config/paths/addlist/*num", a.onConfigPathsAddList)
 	group.PATCH("/config/paths/patch/*name", a.onConfigPathsPatch)
 	group.POST("/config/paths/replace/*name", a.onConfigPathsReplace)
 	group.DELETE("/config/paths/delete/*name", a.onConfigPathsDelete)
+	group.DELETE("/config/paths/deleteall", a.onConfigPathsDeleteAll)
 
 	group.GET("/paths/list", a.onPathsList)
 	group.GET("/paths/get/*name", a.onPathsGet)
@@ -456,9 +459,51 @@ func (a *API) onConfigPathsAdd(ctx *gin.Context) { //nolint:dupl
 		return
 	}
 
-	a.Conf = newConf
+	//??PYM_TEST_00000	a.Conf = newConf
 	a.Parent.APIConfigSet(newConf)
 
+	ctx.Status(http.StatusOK)
+}
+
+func (a *API) onConfigPathsAddList(ctx *gin.Context) { //nolint:dupl
+
+	paraMaxCount := ctx.Param("num")
+
+	if len(paraMaxCount) < 2 || paraMaxCount[0] != '/' {
+		a.writeError(ctx, http.StatusBadRequest, fmt.Errorf("invalid name"))
+		return
+	}
+	maxCount, err := strconv.Atoi(paraMaxCount[1:]) // 숫자가 아님
+	if err != nil {
+		fmt.Println("onConfigPathsAddList err:", err)
+		return
+	}
+
+	var p conf.OptionalPath
+	err = jsonwrapper.Decode(ctx.Request.Body, &p)
+	if err != nil {
+		a.writeError(ctx, http.StatusBadRequest, err)
+		return
+	}
+
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+
+	newConf := a.Conf.Clone()
+	for iConfName := 1; iConfName <= maxCount; iConfName++ {
+		confName := strconv.Itoa(iConfName)
+		err = newConf.AddPath(confName, &p)
+		if err != nil {
+			a.writeError(ctx, http.StatusBadRequest, err)
+			return
+		}
+	}
+	err = newConf.Validate(nil)
+	if err != nil {
+		a.writeError(ctx, http.StatusBadRequest, err)
+		return
+	}
+	a.Parent.APIConfigSet(newConf)
 	ctx.Status(http.StatusOK)
 }
 
@@ -574,6 +619,41 @@ func (a *API) onConfigPathsDelete(ctx *gin.Context) {
 
 	a.Conf = newConf
 	a.Parent.APIConfigSet(newConf)
+
+	ctx.Status(http.StatusOK)
+}
+
+func (a *API) onConfigPathsDeleteAll(ctx *gin.Context) {
+
+	a.mutex.RLock()
+	c := a.Conf
+	a.mutex.RUnlock()
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+
+	for _, key := range sortedKeys(c.Paths) {
+
+		newConf := a.Conf.Clone()
+
+		err := newConf.RemovePath(key)
+		if err != nil {
+			if errors.Is(err, conf.ErrPathNotFound) {
+				a.writeError(ctx, http.StatusNotFound, err)
+			} else {
+				a.writeError(ctx, http.StatusBadRequest, err)
+			}
+			return
+		}
+
+		err = newConf.Validate(nil)
+		if err != nil {
+			a.writeError(ctx, http.StatusBadRequest, err)
+			return
+		}
+
+		a.Conf = newConf
+		a.Parent.APIConfigSet(newConf)
+	}
 
 	ctx.Status(http.StatusOK)
 }

@@ -254,7 +254,7 @@ func (pconf *Path) setDefaults() {
 func newPath(defaults *Path, partial *OptionalPath) *Path {
 	pconf := &Path{}
 	copyStructFields(pconf, defaults)
-	copyStructFields(pconf, partial.Values)
+	copyStructFields(pconf, partial.ValuesOp)
 	return pconf
 }
 

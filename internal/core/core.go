@@ -4,6 +4,7 @@ package core
 import (
 	"context"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
@@ -50,6 +51,45 @@ var defaultConfPaths = []string{
 var cli struct {
 	Version  bool   `help:"print version"`
 	Confpath string `arg:"" default:""`
+}
+
+type pathConfFromFile struct {
+	Name         string            `json:"name"`
+	OptionalPath conf.OptionalPath `json:"path"`
+}
+
+func (p *Core) loadPathsFromList() {
+	byts, err := os.ReadFile("list.json")
+	if err != nil {
+		if !os.IsNotExist(err) {
+			p.Log(logger.Warn, "unable to read list.json: %v", err)
+		}
+		return
+	}
+
+	var paths []pathConfFromFile
+	err = json.Unmarshal(byts, &paths)
+	if err != nil {
+		p.Log(logger.Warn, "unable to parse list.json: %v", err)
+		return
+	}
+
+	newConf := p.conf.Clone()
+
+	for _, entry := range paths {
+		err := newConf.AddPath(entry.Name, &entry.OptionalPath)
+		if err != nil {
+			p.Log(logger.Warn, "unable to add path '%s' from list.json: %v", entry.Name, err)
+			continue
+		}
+		p.Log(logger.Info, "path '%s' loaded from list.json", entry.Name)
+	}
+	err = newConf.Validate(nil)
+	if err != nil {
+		p.Log(logger.Error, "unable to Validate error:'%v'", err)
+		return
+	}
+	p.reloadConf(newConf, false)
 }
 
 func atLeastOneRecordDeleteAfter(pathConfs map[string]*conf.Path) bool {
@@ -145,6 +185,8 @@ func New(args []string) (*Core, bool) {
 		p.closeResources(nil, false)
 		return nil, false
 	}
+
+	p.loadPathsFromList()
 
 	go p.run()
 

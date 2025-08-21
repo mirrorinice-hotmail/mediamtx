@@ -21,7 +21,9 @@ readTimeout: 10s
 writeTimeout: 10s
 # Size of the queue of outgoing packets.
 # A higher value allows to increase throughput, a lower value allows to save RAM.
-writeQueueSize: 512
+# ---------//??PYM_BEGIN  default : 512
+writeQueueSize: 4096
+# ---------//??PYM_BEGIN
 # Maximum size of outgoing UDP packets.
 # This can be decreased to avoid fragmentation on networks with a low UDP MTU.
 udpMaxPayloadSize: 1472
@@ -61,6 +63,10 @@ authInternalUsers:
   # List of permissions.
   permissions:
     # Available actions are: publish, read, playback, api, metrics, pprof.
+# ---------//??PYM_BEGIN
+  - action: api
+    path:
+# ---------//??PYM_END
   - action: publish
     # Paths can be set to further restrict access to a specific path.
     # An empty path means any path.
@@ -130,7 +136,9 @@ authJWTClaimKey: mediamtx_permissions
 # Global settings -> Control API
 
 # Enable controlling the server through the Control API.
-api: no
+# //??PYM_BEGIN default : no
+api: yes
+# //??PYM_END
 # Address of the Control API listener.
 apiAddress: :9997
 # Enable TLS/HTTPS on the Control API server.
@@ -437,13 +445,19 @@ pathDefaults:
   sourceFingerprint:
   # If the source is a URL, it will be pulled only when at least
   # one reader is connected, saving bandwidth.
+  # ------ ??PYM_BEGIN   default : no
   sourceOnDemand: no
+  # ------ ??PYM_END   
   # If sourceOnDemand is "yes", readers will be put on hold until the source is
   # ready or until this amount of time has passed.
+  # ------ ??PYM_BEGIN   default : 10s
   sourceOnDemandStartTimeout: 10s
+  # ------ ??PYM_END
   # If sourceOnDemand is "yes", the source will be closed when there are no
   # readers connected and this amount of time has passed.
-  sourceOnDemandCloseAfter: 10s
+  # ------ ??PYM_BEGIN   default : 10s
+  sourceOnDemandCloseAfter: 1s
+  # ------ ??PYM_END
   # Maximum number of readers. Zero means no limit.
   maxReaders: 0
   # SRT encryption passphrase require to read from this path
