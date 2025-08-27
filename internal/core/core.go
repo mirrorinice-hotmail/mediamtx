@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -53,43 +54,81 @@ var cli struct {
 	Confpath string `arg:"" default:""`
 }
 
-type pathConfFromFile struct {
-	Name         string            `json:"name"`
-	OptionalPath conf.OptionalPath `json:"path"`
-}
-
 func (p *Core) loadPathsFromList() {
-	byts, err := os.ReadFile("list.json")
+	log.Println("loadPathsFromList")
+	byts, err := os.ReadFile("stream_list.json")
 	if err != nil {
 		if !os.IsNotExist(err) {
-			p.Log(logger.Warn, "unable to read list.json: %v", err)
+			p.Log(logger.Warn, "unable to read stream_list.json: %v", err)
 		}
 		return
 	}
 
-	var paths []pathConfFromFile
+	var paths struct {
+		Streams map[string]conf.OptionalPath `json:"streams" groups:"stream_list"`
+	}
+	//var paths map[string]map[string]conf.OptionalPath
+	//var Streams map[string]conf.OptionalPath = paths["streams"]
+
 	err = json.Unmarshal(byts, &paths)
 	if err != nil {
-		p.Log(logger.Warn, "unable to parse list.json: %v", err)
+		p.Log(logger.Warn, "unable to parse stream_list.json: %v", err)
 		return
 	}
 
 	newConf := p.conf.Clone()
 
-	for _, entry := range paths {
-		err := newConf.AddPath(entry.Name, &entry.OptionalPath)
+	for Name, entry := range paths.Streams {
+		err := newConf.AddPath(Name, &entry)
 		if err != nil {
-			p.Log(logger.Warn, "unable to add path '%s' from list.json: %v", entry.Name, err)
+			p.Log(logger.Warn, "unable to add path '%s' from stream_list.json: %v", Name, err)
 			continue
 		}
-		p.Log(logger.Info, "path '%s' loaded from list.json", entry.Name)
+		p.Log(logger.Info, "path '%s' loaded from stream_list.json", Name)
 	}
 	err = newConf.Validate(nil)
 	if err != nil {
 		p.Log(logger.Error, "unable to Validate error:'%v'", err)
 		return
 	}
+
 	p.reloadConf(newConf, false)
+
+	//p.savePathsToList() //??PYM_TEST_00000
+
+}
+
+func (p *Core) savePathsToList() error {
+	log.Println("savePathsToList")
+
+	streams := make(map[string]interface{})
+
+	// p.conf.OptionalPaths is map[string]*conf.OptionalPath
+	// we need to save the content of ValuesOp
+	for name, optionalPath := range p.conf.OptionalPaths {
+		if optionalPath != nil && optionalPath.ValuesOp != nil && name != "all_others" {
+			streams[name] = optionalPath.ValuesOp
+		}
+	}
+
+	pathsToSave := map[string]interface{}{
+		"streams": streams,
+	}
+
+	byts, err := json.MarshalIndent(pathsToSave, "", "  ")
+	if err != nil {
+		p.Log(logger.Error, "unable to marshal stream_list.json: %v", err)
+		return err
+	}
+
+	err = os.WriteFile("stream_list_out.json", byts, 0o644)
+	if err != nil {
+		p.Log(logger.Error, "unable to write to stream_list.json: %v", err)
+		return err
+	}
+
+	p.Log(logger.Info, "paths configuration saved to stream_list.json")
+	return nil
 }
 
 func atLeastOneRecordDeleteAfter(pathConfs map[string]*conf.Path) bool {
@@ -134,6 +173,9 @@ type Core struct {
 
 // New allocates a Core.
 func New(args []string) (*Core, bool) {
+
+	gRinoConfig.loadConfig()
+
 	parser, err := kong.New(&cli,
 		kong.Description("MediaMTX "+string(version)),
 		kong.UsageOnError(),
