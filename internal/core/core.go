@@ -54,12 +54,17 @@ var cli struct {
 	Confpath string `arg:"" default:""`
 }
 
-func (p *Core) loadPathsFromList() {
-	log.Println("loadPathsFromList")
-	byts, err := os.ReadFile("stream_list.json")
+func (p *Core) RNLoadPathsFromList(calledByAPI bool) {
+	log.Println("[CORE]_RNLoadPathsFromList")
+
+	var filename = STREAM_LIST_FILENAME
+	if calledByAPI {
+		filename = STREAM_LIST_REMOTE_DB_FILENAME
+	}
+	byts, err := os.ReadFile(filename)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			p.Log(logger.Warn, "unable to read stream_list.json: %v", err)
+			p.Log(logger.Warn, "unable to read stream_list: %v", err)
 		}
 		return
 	}
@@ -72,7 +77,7 @@ func (p *Core) loadPathsFromList() {
 
 	err = json.Unmarshal(byts, &paths)
 	if err != nil {
-		p.Log(logger.Warn, "unable to parse stream_list.json: %v", err)
+		p.Log(logger.Warn, "unable to parse stream_list: %v", err)
 		return
 	}
 
@@ -81,10 +86,10 @@ func (p *Core) loadPathsFromList() {
 	for Name, entry := range paths.Streams {
 		err := newConf.AddPath(Name, &entry)
 		if err != nil {
-			p.Log(logger.Warn, "unable to add path '%s' from stream_list.json: %v", Name, err)
+			p.Log(logger.Warn, "unable to add path '%s' from stream_list: %v", Name, err)
 			continue
 		}
-		p.Log(logger.Info, "path '%s' loaded from stream_list.json", Name)
+		p.Log(logger.Info, "path '%s' loaded from stream_list", Name)
 	}
 	err = newConf.Validate(nil)
 	if err != nil {
@@ -92,9 +97,15 @@ func (p *Core) loadPathsFromList() {
 		return
 	}
 
-	p.reloadConf(newConf, false)
+	if calledByAPI {
+		p.APIConfigSet(newConf)
+		//??PYM_TEST_00000 p.savePathsToList()
 
-	//p.savePathsToList() //??PYM_TEST_00000
+	} else {
+		p.reloadConf(newConf, false)
+	}
+
+	//??PYM_TEST_ p.savePathsToList()
 
 }
 
@@ -117,17 +128,41 @@ func (p *Core) savePathsToList() error {
 
 	byts, err := json.MarshalIndent(pathsToSave, "", "  ")
 	if err != nil {
-		p.Log(logger.Error, "unable to marshal stream_list.json: %v", err)
+		p.Log(logger.Error, "unable to marshal stream_list: %v", err)
 		return err
 	}
 
-	err = os.WriteFile("stream_list_out.json", byts, 0o644)
+	err = os.WriteFile(STREAM_LIST_FILENAME, byts, 0o644)
 	if err != nil {
-		p.Log(logger.Error, "unable to write to stream_list.json: %v", err)
+		p.Log(logger.Error, "unable to write to stream_list: %v", err)
 		return err
 	}
 
-	p.Log(logger.Info, "paths configuration saved to stream_list.json")
+	p.Log(logger.Info, "paths configuration saved to stream_list")
+	return nil
+}
+
+func (p *Core) RNSaveFromRemoteDB() error {
+	log.Println("[CORE]_RNSaveFromRemoteDB")
+	streams := gRNRemoteDbMgr.Read_stream_list()
+
+	pathsToSave := map[string]interface{}{
+		"streams": streams,
+	}
+
+	byts, err := json.MarshalIndent(pathsToSave, "", "  ")
+	if err != nil {
+		p.Log(logger.Error, "unable to marshal stream_list: %v", err)
+		return err
+	}
+
+	err = os.WriteFile(STREAM_LIST_REMOTE_DB_FILENAME, byts, 0o644) //STREAM_LIST_FILENAME
+	if err != nil {
+		p.Log(logger.Error, "unable to write to stream_list: %v", err)
+		return err
+	}
+
+	p.Log(logger.Info, "paths configuration saved to stream_list")
 	return nil
 }
 
@@ -175,6 +210,7 @@ type Core struct {
 func New(args []string) (*Core, bool) {
 
 	gRinoConfig.loadConfig()
+	gRNRemoteDbMgr.init(&gRinoConfig.Dbms)
 
 	parser, err := kong.New(&cli,
 		kong.Description("MediaMTX "+string(version)),
@@ -228,7 +264,8 @@ func New(args []string) (*Core, bool) {
 		return nil, false
 	}
 
-	p.loadPathsFromList()
+	//??PYM_TEST_
+	p.RNLoadPathsFromList(false)
 
 	go p.run()
 

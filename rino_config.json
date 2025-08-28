@@ -1,0 +1,11 @@
+{
+  "dbms": {
+    "type": "postgresql",
+    "host": "127.0.0.1",
+    "port": 5432,
+    "user": "postgres",
+    "pass": "rino1234",
+    "dbname": "test_rino_cctv_list",
+    "tablename": "tbl_mediamtx_streamlist"
+  }
+}

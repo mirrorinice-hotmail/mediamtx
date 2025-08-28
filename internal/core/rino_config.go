@@ -10,7 +10,7 @@ import (
 )
 
 /*"github.com/imdario/mergo"*/
-var rinoConfigFile string = "rinoConfig.json"
+const RINO_CONFIG_FILENAME = "rino_config.json"
 
 // Config global
 var gRinoConfig TRinoTRinoConfigST
@@ -82,7 +82,7 @@ func (obj *TRinoTRinoConfigST) GetWebRTCPortMax() uint16 {
 func (obj *TRinoTRinoConfigST) loadConfig() {
 	obj.mutex.Lock()
 	defer obj.mutex.Unlock()
-	data, err := os.ReadFile(rinoConfigFile)
+	data, err := os.ReadFile(RINO_CONFIG_FILENAME)
 	if err == nil {
 		err = json.Unmarshal(data, &obj)
 		if err != nil {

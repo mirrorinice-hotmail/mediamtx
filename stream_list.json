@@ -11,12 +11,10 @@
       "runOnReadyRestart": true,
       "runOnReadRestart": true
     },
-
     "cctv5_002": {
       "source": "rtsp://10.10.0.31:1935/rinowebrtc/cctv5.stream",
       "sourceOnDemand": false
     },
-
     "snsd_001": {
       "source": "rtsp://10.10.0.30:1935/vod/FHD_1.mp4",
       "sourceOnDemand": false

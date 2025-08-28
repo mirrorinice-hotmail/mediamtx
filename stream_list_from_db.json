@@ -1,0 +1,20 @@
+{
+  "streams": {
+    "cctv5_001": {
+      "source": "rtsp://10.10.0.31:1935/rinowebrtc/cctv5.stream",
+      "sourceOnDemand": true
+    },
+    "cctv5_002": {
+      "source": "rtsp://10.10.0.31:1935/rinowebrtc/cctv5.stream",
+      "sourceOnDemand": true
+    },
+    "cctv5_003": {
+      "source": "rtsp://10.10.0.31:1935/rinowebrtc/cctv5.stream",
+      "sourceOnDemand": true
+    },
+    "cctv5_004": {
+      "source": "rtsp://10.10.0.31:1935/rinowebrtc/cctv5.stream",
+      "sourceOnDemand": true
+    }
+  }
+}

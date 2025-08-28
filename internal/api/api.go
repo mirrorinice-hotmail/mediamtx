@@ -127,6 +127,8 @@ type apiAuthManager interface {
 type apiParent interface {
 	logger.Writer
 	APIConfigSet(conf *conf.Conf)
+	RNLoadPathsFromList(calledByAPI bool) //??PYM_
+	RNSaveFromRemoteDB() error            //??PYM_
 }
 
 // API is an API server.
@@ -163,6 +165,8 @@ func (a *API) Initialize() error {
 	router.Use(a.middlewareAuth)
 
 	group := router.Group("/v3")
+
+	group.PUT("/config/paths/updatelist", a.onConfigPathsUpdateList) //nolint:dupl
 
 	group.GET("/config/global/get", a.onConfigGlobalGet)
 	group.PATCH("/config/global/patch", a.onConfigGlobalPatch)
@@ -461,6 +465,17 @@ func (a *API) onConfigPathsAdd(ctx *gin.Context) { //nolint:dupl
 
 	//??PYM_TEST_00000	a.Conf = newConf
 	a.Parent.APIConfigSet(newConf)
+
+	ctx.Status(http.StatusOK)
+}
+
+func (a *API) onConfigPathsUpdateList(ctx *gin.Context) { //nolint:dupl
+
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+
+	a.Parent.RNSaveFromRemoteDB()
+	a.Parent.RNLoadPathsFromList(true)
 
 	ctx.Status(http.StatusOK)
 }
