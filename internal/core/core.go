@@ -82,6 +82,16 @@ func (p *Core) RNLoadPathsFromList(calledByAPI bool) {
 	}
 
 	newConf := p.conf.Clone()
+	for Name := range newConf.OptionalPaths {
+		pathInfo, ok := paths.Streams[Name]
+		if ok {
+			newConf.ReplacePath(Name, &pathInfo)
+			delete(paths.Streams, Name)
+			continue
+		}
+
+		delete(newConf.OptionalPaths, Name)
+	}
 
 	for Name, entry := range paths.Streams {
 		err := newConf.AddPath(Name, &entry)
@@ -99,7 +109,6 @@ func (p *Core) RNLoadPathsFromList(calledByAPI bool) {
 
 	if calledByAPI {
 		p.APIConfigSet(newConf)
-		//??PYM_TEST_00000 p.savePathsToList()
 
 	} else {
 		p.reloadConf(newConf, false)

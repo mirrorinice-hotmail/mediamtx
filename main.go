@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	log.Println("---------  Mediamtx Rino --------- v25.08.28.0101")
+	log.Println("---------  Mediamtx Rino --------- v25.08.29.0101")
 
 	s, ok := core.New(os.Args[1:])
 	if !ok {
