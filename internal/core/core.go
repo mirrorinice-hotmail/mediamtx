@@ -58,9 +58,6 @@ func (p *Core) RNLoadPathsFromList(calledByAPI bool) {
 	log.Println("[CORE]_RNLoadPathsFromList")
 
 	var filename = STREAM_LIST_FILENAME
-	if calledByAPI {
-		filename = STREAM_LIST_REMOTE_DB_FILENAME
-	}
 	byts, err := os.ReadFile(filename)
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -113,8 +110,60 @@ func (p *Core) RNLoadPathsFromList(calledByAPI bool) {
 	} else {
 		p.reloadConf(newConf, false)
 	}
+}
 
-	//??PYM_TEST_ p.savePathsToList()
+func (p *Core) RNLoadPathsFromFile(calledByAPI bool) {
+	log.Println("[CORE]_RNLoadPathsFromFile")
+
+	var filename = STREAM_LIST_FILENAME
+
+	byts, err := os.ReadFile(filename)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			p.Log(logger.Warn, "unable to read stream_list: %v", err)
+		}
+		return
+	}
+
+	var paths struct {
+		Streams map[string]conf.OptionalPath `json:"streams" groups:"stream_list"`
+	}
+	//var paths map[string]map[string]conf.OptionalPath
+	//var Streams map[string]conf.OptionalPath = paths["streams"]
+
+	err = json.Unmarshal(byts, &paths)
+	if err != nil {
+		p.Log(logger.Warn, "unable to parse stream_list: %v", err)
+		return
+	}
+
+	newConf := p.conf.Clone()
+	for Name := range newConf.OptionalPaths {
+		pathInfo, ok := paths.Streams[Name]
+		if ok {
+			newConf.ReplacePath(Name, &pathInfo)
+			delete(paths.Streams, Name)
+			continue
+		}
+
+		delete(newConf.OptionalPaths, Name)
+	}
+
+	for Name, entry := range paths.Streams {
+		err := newConf.AddPath(Name, &entry)
+		if err != nil {
+			p.Log(logger.Warn, "unable to add path '%s' from stream_list: %v", Name, err)
+			continue
+		}
+		p.Log(logger.Info, "path '%s' loaded from stream_list", Name)
+	}
+	err = newConf.Validate(nil)
+	if err != nil {
+		p.Log(logger.Error, "unable to Validate error:'%v'", err)
+		return
+	}
+
+	p.reloadConf(newConf, false) //??PYM_TEST_0000 calledByAPI)
 
 }
 
@@ -273,8 +322,7 @@ func New(args []string) (*Core, bool) {
 		return nil, false
 	}
 
-	//??PYM_TEST_
-	p.RNLoadPathsFromList(false)
+	p.RNLoadPathsFromFile(false)
 
 	go p.run()
 

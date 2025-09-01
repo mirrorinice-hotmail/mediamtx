@@ -62,10 +62,9 @@ func (obj *TRNRemoteDbMgr) db_open() *sql.DB {
 
 func (obj *TRNRemoteDbMgr) Read_stream_list() TRNStreamsMAP {
 
-	var newStream TRNStreamsMAP
 	remote_db := obj.db_open()
 	if remote_db == nil {
-		return newStream
+		return nil
 	}
 	defer remote_db.Close()
 
@@ -83,56 +82,41 @@ func (obj *TRNRemoteDbMgr) Read_stream_list() TRNStreamsMAP {
 		panic(err)
 	}
 	defer rows.Close()
-	newStream = makeTemporalStreams(rows)
-	return newStream
-}
 
-// ///////////////////////////////////////////////////////////////////////////////
-
-func makeTemporalStreams(rows *sql.Rows) TRNStreamsMAP {
-
+	//newStreamsList := makeTemporalStreams(rows)
 	var newStreamsList = make(TRNStreamsMAP)
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("_makeTemporalStreams", ": recovered from panic:", r)
-		}
-	}()
+	{
+		for rows.Next() {
+			var val_stream_id, val_rtsp_01, val_rtsp_02, val_cctv_nm, val_cctv_ip string
+			var val_health byte
+			err := rows.Scan(&val_stream_id, &val_rtsp_01, &val_rtsp_02, &val_cctv_nm, &val_cctv_ip, &val_health)
+			if err != nil {
+				fmt.Printf("Warning! can't parse stream in stream_id(%s)\n", val_stream_id)
+				continue
+			}
+			fmt.Printf("stream list: stream_id(%s), rtsp_01(%s), cctv_nm(%s)\n",
+				val_stream_id, val_rtsp_01, val_cctv_nm)
 
-	// query := "SELECT " +
-	// 	col_stream_id + "," +
-	// 	col_rtsp_01 + "," +
-	// 	col_rtsp_02 + "," +
-	// 	col_cctv_nm + "," +
-	// 	col_cctv_ip + "," +
-	// 	col_health +
-	for rows.Next() {
-		var val_stream_id, val_rtsp_01, val_rtsp_02, val_cctv_nm, val_cctv_ip string
-		var val_health byte
-		err := rows.Scan(&val_stream_id, &val_rtsp_01, &val_rtsp_02, &val_cctv_nm, &val_cctv_ip, &val_health)
-		if err != nil {
-			fmt.Printf("Warning! can't parse stream in stream_id(%s)\n", val_stream_id)
-			continue
+			tmpStream := TRNStreamST{
+				//StreamId: val_stream_id,
+				//CctvName: val_cctv_nm,
+				//CctvIp:   val_cctv_ip,
+				//Channels:     make(ChannelMAP),
+				RtspUrl: val_rtsp_01,
+				//RtspUrl_2: val_rtsp_02,
+				//Status:    val_health,
+				OnDemand: false,
+				//DisableAudio: true,
+				//Debug:        false,
+			}
+			//tmpStream.Channels["0"] = ChannelST{}
+			newStreamsList[val_stream_id] = tmpStream
 		}
-		fmt.Printf("stream list: stream_id(%s), rtsp_01(%s), cctv_nm(%s)\n",
-			val_stream_id, val_rtsp_01, val_cctv_nm)
-
-		tmpStream := TRNStreamST{
-			//StreamId: val_stream_id,
-			//CctvName: val_cctv_nm,
-			//CctvIp:   val_cctv_ip,
-			//Channels:     make(ChannelMAP),
-			RtspUrl: val_rtsp_01,
-			//RtspUrl_2: val_rtsp_02,
-			//Status:    val_health,
-			OnDemand: true,
-			//DisableAudio: true,
-			//Debug:        false,
-		}
-		//tmpStream.Channels["0"] = ChannelST{}
-		newStreamsList[val_stream_id] = tmpStream
 	}
 	return newStreamsList
 }
+
+// ///////////////////////////////////////////////////////////////////////////////
 
 func (obj *TRNRemoteDbMgr) db_add_samples() bool {
 	var insert_val_list = []string{

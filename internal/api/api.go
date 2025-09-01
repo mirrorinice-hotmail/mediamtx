@@ -128,6 +128,7 @@ type apiParent interface {
 	logger.Writer
 	APIConfigSet(conf *conf.Conf)
 	RNLoadPathsFromList(calledByAPI bool) //??PYM_
+	RNLoadPathsFromFile(calledByAPI bool) //??PYM_
 	RNSaveFromRemoteDB() error            //??PYM_
 }
 
@@ -166,8 +167,6 @@ func (a *API) Initialize() error {
 
 	group := router.Group("/v3")
 
-	group.PUT("/config/paths/updatelist", a.onConfigPathsUpdateList) //nolint:dupl
-
 	group.GET("/config/global/get", a.onConfigGlobalGet)
 	group.PATCH("/config/global/patch", a.onConfigGlobalPatch)
 
@@ -178,6 +177,8 @@ func (a *API) Initialize() error {
 	group.GET("/config/paths/get/*name", a.onConfigPathsGet)
 	group.POST("/config/paths/add/*name", a.onConfigPathsAdd)
 	group.POST("/config/paths/addlist/*num", a.onConfigPathsAddList)
+	group.PUT("/config/paths/updatelist", a.onConfigPathsUpdateList)
+	group.PUT("/config/paths/loadlist", a.onConfigPathsLoadList)
 	group.PATCH("/config/paths/patch/*name", a.onConfigPathsPatch)
 	group.POST("/config/paths/replace/*name", a.onConfigPathsReplace)
 	group.DELETE("/config/paths/delete/*name", a.onConfigPathsDelete)
@@ -465,6 +466,15 @@ func (a *API) onConfigPathsAdd(ctx *gin.Context) { //nolint:dupl
 
 	//??PYM_TEST_00000	a.Conf = newConf
 	a.Parent.APIConfigSet(newConf)
+
+	ctx.Status(http.StatusOK)
+}
+
+func (a *API) onConfigPathsLoadList(ctx *gin.Context) {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+
+	a.Parent.RNLoadPathsFromFile(true)
 
 	ctx.Status(http.StatusOK)
 }

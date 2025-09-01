@@ -18,6 +18,10 @@
     "snsd_001": {
       "source": "rtsp://10.10.0.30:1935/vod/FHD_1.mp4",
       "sourceOnDemand": false
+    },
+    "snsd_002": {
+      "source": "rtsp://10.10.0.30:1935/vod/FHD_1.mp4",
+      "sourceOnDemand": true
     }
   }
 }
