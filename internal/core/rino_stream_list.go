@@ -2,13 +2,8 @@ package core
 
 import (
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
-	"os"
 	"sync"
-
-	goversion "github.com/hashicorp/go-version"
-	"github.com/liip/sheriff"
 )
 
 const STREAM_LIST_FILENAME = "stream_list.json"
@@ -110,42 +105,3 @@ type TRNStreamST struct {
 // 	return isListChanged
 
 // }
-
-func (obj *TRNStreamListInfoST) SaveList() error {
-	obj.mutex.RLock()
-	defer obj.mutex.RUnlock()
-	// log.WithFields(logrus.Fields{
-	// 	"module": "stream_list",
-	// 	"func":   "NewStreamCore",
-	// }).Debugln("Saving configuration to", StreamListJsonFile)
-	v2, err := goversion.NewVersion("2.0.0")
-	if err != nil {
-		return err
-	}
-
-	options := &sheriff.Options{
-		Groups:     []string{"config"},
-		ApiVersion: v2,
-	}
-	data, err := sheriff.Marshal(options, obj)
-	if err != nil {
-		return err
-	}
-	//data := obj
-	JsonData, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile(STREAM_LIST_FILENAME, JsonData, 0644)
-	if err != nil {
-		// log.WithFields(logrus.Fields{
-		// 	"module": "stream_list",
-		// 	"func":   "SaveList",
-		// 	"call":   "WriteFile",
-		// }).Errorln(err.Error())
-		return err
-	}
-
-	return nil
-}

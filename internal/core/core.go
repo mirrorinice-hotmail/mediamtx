@@ -57,8 +57,7 @@ var cli struct {
 func (p *Core) RNLoadPathsFromList(calledByAPI bool) {
 	log.Println("[CORE]_RNLoadPathsFromList")
 
-	var filename = STREAM_LIST_FILENAME
-	byts, err := os.ReadFile(filename)
+	byts, err := os.ReadFile(STREAM_LIST_REMOTE_DB_FILENAME)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			p.Log(logger.Warn, "unable to read stream_list: %v", err)
@@ -115,9 +114,7 @@ func (p *Core) RNLoadPathsFromList(calledByAPI bool) {
 func (p *Core) RNLoadPathsFromFile(calledByAPI bool) {
 	log.Println("[CORE]_RNLoadPathsFromFile")
 
-	var filename = STREAM_LIST_FILENAME
-
-	byts, err := os.ReadFile(filename)
+	byts, err := os.ReadFile(STREAM_LIST_FILENAME)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			p.Log(logger.Warn, "unable to read stream_list: %v", err)
@@ -217,7 +214,7 @@ func (p *Core) RNSaveFromRemoteDB() error {
 		return err
 	}
 
-	err = os.WriteFile(STREAM_LIST_REMOTE_DB_FILENAME, byts, 0o644) //STREAM_LIST_FILENAME
+	err = os.WriteFile(STREAM_LIST_REMOTE_DB_FILENAME, byts, 0o644)
 	if err != nil {
 		p.Log(logger.Error, "unable to write to stream_list: %v", err)
 		return err
