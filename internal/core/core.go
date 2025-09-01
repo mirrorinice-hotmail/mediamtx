@@ -163,7 +163,7 @@ func (p *Core) RNLoadPathsFromFile(calledByAPI bool) {
 		return
 	}
 
-	p.reloadConf(newConf, false) //??PYM_TEST_0000 calledByAPI)
+	p.reloadConf(newConf, calledByAPI)
 
 }
 
@@ -202,7 +202,10 @@ func (p *Core) savePathsToList() error {
 
 func (p *Core) RNSaveFromRemoteDB() error {
 	log.Println("[CORE]_RNSaveFromRemoteDB")
-	streams := gRNRemoteDbMgr.Read_stream_list()
+	streams, err := gRNRemoteDbMgr.Read_stream_list()
+	if err != nil {
+		return err
+	}
 
 	pathsToSave := map[string]interface{}{
 		"streams": streams,

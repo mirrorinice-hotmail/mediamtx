@@ -60,11 +60,11 @@ func (obj *TRNRemoteDbMgr) db_open() *sql.DB {
 	return db
 }
 
-func (obj *TRNRemoteDbMgr) Read_stream_list() TRNStreamsMAP {
+func (obj *TRNRemoteDbMgr) Read_stream_list() (TRNStreamsMAP, error) {
 
 	remote_db := obj.db_open()
 	if remote_db == nil {
-		return nil
+		return nil, fmt.Errorf("Error! can't open remote db")
 	}
 	defer remote_db.Close()
 
@@ -79,7 +79,7 @@ func (obj *TRNRemoteDbMgr) Read_stream_list() TRNStreamsMAP {
 	fmt.Printf("sql : query(%s)\n", query)
 	rows, err := remote_db.Query(query)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Error! can't get stream list from remote db :'" + err.Error() + "'")
 	}
 	defer rows.Close()
 
@@ -113,7 +113,7 @@ func (obj *TRNRemoteDbMgr) Read_stream_list() TRNStreamsMAP {
 			newStreamsList[val_stream_id] = tmpStream
 		}
 	}
-	return newStreamsList
+	return newStreamsList, nil
 }
 
 // ///////////////////////////////////////////////////////////////////////////////

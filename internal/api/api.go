@@ -464,7 +464,6 @@ func (a *API) onConfigPathsAdd(ctx *gin.Context) { //nolint:dupl
 		return
 	}
 
-	//??PYM_TEST_00000	a.Conf = newConf
 	a.Parent.APIConfigSet(newConf)
 
 	ctx.Status(http.StatusOK)
@@ -484,7 +483,12 @@ func (a *API) onConfigPathsUpdateList(ctx *gin.Context) { //nolint:dupl
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 
-	a.Parent.RNSaveFromRemoteDB()
+	err := a.Parent.RNSaveFromRemoteDB()
+	if err != nil {
+		a.writeError(ctx, http.StatusFailedDependency, err)
+		return
+	}
+
 	a.Parent.RNLoadPathsFromList(true)
 
 	ctx.Status(http.StatusOK)
