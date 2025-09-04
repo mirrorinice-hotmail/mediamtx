@@ -7,3 +7,4 @@
 /internal/staticsources/rpicamera/mtxrpicam_*
 mediamtx.exe
 .vscode/settings.json
+mediamtx.log

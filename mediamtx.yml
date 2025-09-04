@@ -7,9 +7,13 @@
 # Global settings -> General
 
 # Verbosity of the program; available values are "error", "warn", "info", "debug".
+# ---------//??PYM_BEGIN  default : info
 logLevel: info
+# ---------//??PYM_END
 # Destinations of log messages; available values are "stdout", "file" and "syslog".
-logDestinations: [stdout]
+# ---------//??PYM_BEGIN  default : [stdout]
+logDestinations: [stdout, file]
+# ---------//??PYM_END
 # If "file" is in logDestinations, this is the file which will receive the logs.
 logFile: mediamtx.log
 # If "syslog" is in logDestinations, use prefix for logs.
@@ -270,7 +274,9 @@ rtspAuthMethods: [basic]
 # Global settings -> RTMP server
 
 # Enable publishing and reading streams with the RTMP protocol.
-rtmp: yes
+# ---------//??PYM_BEGIN default : yes
+rtmp: no
+# ---------//??PYM_END
 # Address of the RTMP listener. This is needed only when encryption is "no" or "optional".
 rtmpAddress: :1935
 # Encrypt connections with TLS (RTMPS).
@@ -290,7 +296,9 @@ rtmpServerCert: server.crt
 # Global settings -> HLS server
 
 # Enable reading streams with the HLS protocol.
-hls: yes
+# ---------//??PYM_BEGIN default : yes
+hls: no
+# ---------//??PYM_END
 # Address of the HLS listener.
 hlsAddress: :8888
 # Enable TLS/HTTPS on the HLS server.
@@ -349,7 +357,9 @@ hlsMuxerCloseAfter: 60s
 # Global settings -> WebRTC server
 
 # Enable publishing and reading streams with the WebRTC protocol.
-webrtc: yes
+# ---------//??PYM_BEGIN default : yes
+webrtc: no
+# ---------//??PYM_END
 # Address of the WebRTC HTTP listener.
 webrtcAddress: :8889
 # Enable TLS/HTTPS on the WebRTC server.
@@ -404,7 +414,9 @@ webrtcSTUNGatherTimeout: 5s
 # Global settings -> SRT server
 
 # Enable publishing and reading streams with the SRT protocol.
-srt: yes
+# ---------//??PYM_BEGIN default : yes
+srt: no
+# ---------//??PYM_END
 # Address of the SRT listener.
 srtAddress: :8890
 

@@ -2,6 +2,7 @@
 package stream
 
 import (
+	"log"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -32,7 +33,9 @@ type Stream struct {
 	Desc               *description.Session
 	GenerateRTPPackets bool
 	Parent             logger.Writer
+	OnTimeout          func()
 
+	lastPacketTime   *int64
 	bytesReceived    *uint64
 	bytesSent        *uint64
 	streamMedias     map[*description.Media]*streamMedia
@@ -47,6 +50,9 @@ type Stream struct {
 
 // Initialize initializes a Stream.
 func (s *Stream) Initialize() error {
+	s.lastPacketTime = new(int64)
+	atomic.StoreInt64(s.lastPacketTime, time.Now().Unix())
+
 	s.bytesReceived = new(uint64)
 	s.bytesSent = new(uint64)
 	s.streamMedias = make(map[*description.Media]*streamMedia)
@@ -81,7 +87,26 @@ func (s *Stream) Initialize() error {
 		}
 	}
 
+	go s.checkTimeout()
+
 	return nil
+}
+
+func (s *Stream) checkTimeout() {
+	if s.OnTimeout == nil {
+		return
+	}
+	time.Sleep(1 * time.Second)
+	log.Println("[stream]_checkTimeout() begin.")
+	for {
+		lastPacketTime := atomic.LoadInt64(s.lastPacketTime)
+		if time.Now().Unix()-lastPacketTime > 3 {
+			log.Println("[stream]_checkTimeout().. no packet come")
+			s.OnTimeout()
+			return
+		}
+		time.Sleep(1 * time.Second)
+	}
 }
 
 // Close closes all resources of the stream.
@@ -252,6 +277,7 @@ func (s *Stream) WaitRunningReader() {
 
 // WriteUnit writes a Unit.
 func (s *Stream) WriteUnit(medi *description.Media, forma format.Format, u unit.Unit) {
+	atomic.StoreInt64(s.lastPacketTime, time.Now().Unix())
 	sm := s.streamMedias[medi]
 	sf := sm.formats[forma]
 
@@ -269,6 +295,7 @@ func (s *Stream) WriteRTPPacket(
 	ntp time.Time,
 	pts int64,
 ) {
+	atomic.StoreInt64(s.lastPacketTime, time.Now().Unix())
 	sm := s.streamMedias[medi]
 	sf := sm.formats[forma]
 

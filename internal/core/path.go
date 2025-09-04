@@ -109,6 +109,7 @@ type path struct {
 	chAddReader               chan defs.PathAddReaderReq
 	chRemoveReader            chan defs.PathRemoveReaderReq
 	chAPIPathsGet             chan pathAPIPathsGetReq
+	chStreamTimedOut          chan struct{}
 
 	// out
 	done chan struct{}
@@ -135,6 +136,7 @@ func (pa *path) initialize() {
 	pa.chAddReader = make(chan defs.PathAddReaderReq)
 	pa.chRemoveReader = make(chan defs.PathRemoveReaderReq)
 	pa.chAPIPathsGet = make(chan pathAPIPathsGetReq)
+	pa.chStreamTimedOut = make(chan struct{})
 	pa.done = make(chan struct{})
 
 	pa.Log(logger.Debug, "created")
@@ -313,8 +315,22 @@ func (pa *path) runInner() error {
 		case req := <-pa.chAPIPathsGet:
 			pa.doAPIPathsGet(req)
 
+		case <-pa.chStreamTimedOut:
+			pa.doStreamTimedOut()
+
 		case <-pa.ctx.Done():
 			return fmt.Errorf("terminated")
+		}
+	}
+}
+
+func (pa *path) doStreamTimedOut() {
+	if pa.source != nil {
+		if source, ok := pa.source.(*staticsources.Handler); ok {
+			if !pa.conf.SourceOnDemand {
+				source.Stop("timed out")
+				source.Start(false, "")
+			}
 		}
 	}
 }
@@ -702,6 +718,16 @@ func (pa *path) setReady(desc *description.Session, allocateEncoder bool) error 
 		Desc:               desc,
 		GenerateRTPPackets: allocateEncoder,
 		Parent:             pa.source,
+	}
+	if !pa.conf.SourceOnDemand {
+		pa.stream.OnTimeout = func() {
+			select {
+			case pa.chStreamTimedOut <- struct{}{}:
+			case <-pa.ctx.Done():
+			}
+		}
+	} else {
+		pa.stream.OnTimeout = nil
 	}
 	err := pa.stream.Initialize()
 	if err != nil {

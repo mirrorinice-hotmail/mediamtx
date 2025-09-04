@@ -1,5 +1,12 @@
 {
   "streams": {
+    "snsd_001": {
+      "source": "rtsp://10.10.0.30:1935/vod/30FHD_8.mp4",
+      "fallback": "rtsp://10.10.0.30:1935/vod/30FHD_8.mp4",
+      "sourceOnDemand": false
+    }
+  },
+  "streams_backup": {
     "cctv5_001": {
       "source": "rtsp://10.10.0.31:1935/rinowebrtc/cctv5.stream",
       "sourceOnDemand": true,
@@ -13,10 +20,11 @@
     },
     "cctv5_002": {
       "source": "rtsp://10.10.0.31:1935/rinowebrtc/cctv5.stream",
-      "sourceOnDemand": false
+      "sourceOnDemand": true
     },
     "snsd_001": {
-      "source": "rtsp://10.10.0.30:1935/vod/FHD_1.mp4",
+      "source": "redirect",
+      "sourceRedirect": "rtsp://10.10.0.30:1935/vod/30FHD_8.mp4",
       "sourceOnDemand": false
     },
     "snsd_002": {

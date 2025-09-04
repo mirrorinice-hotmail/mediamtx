@@ -64,7 +64,7 @@ func (obj *TRNRemoteDbMgr) Read_stream_list() (TRNStreamsMAP, error) {
 
 	remote_db := obj.db_open()
 	if remote_db == nil {
-		return nil, fmt.Errorf("Error! can't open remote db")
+		return nil, fmt.Errorf("error! can't open remote db")
 	}
 	defer remote_db.Close()
 

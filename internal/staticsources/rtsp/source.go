@@ -133,6 +133,8 @@ func (s *Source) Run(params defs.StaticSourceRunParams) error {
 			decodeErrors.Increase()
 		},
 	}
+	s.Log(logger.Debug, "Source.Run(), set gortsplib.Client, ReadTimeout: "+c.ReadTimeout.String()+
+		", WriteTimeout: "+c.WriteTimeout.String()+"") //??PYM_ADD
 
 	u, err := base.ParseURL(params.ResolvedSource)
 	if err != nil {
@@ -192,11 +194,14 @@ func (s *Source) Run(params defs.StaticSourceRunParams) error {
 	for {
 		select {
 		case err := <-readErr:
+			s.Log(logger.Warn, "Source.Run(), for-loop, readErr: '"+err.Error()+"'") //??PYM_ADD
 			return err
 
 		case <-params.ReloadConf:
+			s.Log(logger.Info, "Source.Run(), for-loop, ReloadConf ") //??PYM_ADD
 
 		case <-params.Context.Done():
+			s.Log(logger.Info, "Source.Run(), for-loop, Done() ") //??PYM_ADD
 			c.Close()
 			<-readErr
 			return nil
